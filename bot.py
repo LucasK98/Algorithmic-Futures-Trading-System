@@ -1,20 +1,7 @@
 """
-bot.py — Standalone TopstepX Trading Bot (corrected against real ProjectX API spec)
+bot.py TopstepX Trading Bot
 
 Opening Range Trend Scalp | 15 tick TP / 30 tick SL | ES
-
-KEY CHANGES vs earlier versions (all verified against ProjectX docs):
-  - Uses NATIVE bracket orders (stopLossBracket + takeProfitBracket on the
-    entry order) — TP and SL are attached atomically, no naked-position gap.
-  - retrieveBars uses the REAL parameter names (unit/unitNumber/startTime/etc).
-  - Bars are sorted oldest-first (API returns newest-first).
-  - Positions read from /Position/searchOpen (correct endpoint).
-  - Flatten uses /Position/closeContract.
-  - Win/loss detected from /Trade/search profitAndLoss (reliable), not by
-    guessing which order cancelled.
-  - Token re-auth safety net if a call ever returns 401.
-
-Run with:  python bot.py
 """
 
 import time
@@ -30,7 +17,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Force UTF-8 output so emoji/box characters never crash Windows terminals (cp1252)
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:
@@ -65,7 +51,7 @@ USE_LIVE    = False
 
 TICK_SIZE       = 0.25
 TICK_VALUE      = 12.50
-PROFIT_TICKS    = 15       # $183.30 after commission — clears $150 XFA threshold
+PROFIT_TICKS    = 15       # $183.30 after commission 
 STOP_TICKS      = 30       # $379.20 after commission
 MAX_TRADES_DAY  = 10        # shared budget across BOTH sessions combined
 MAX_LOSSES_DAY  = 1        # shared budget across BOTH sessions combined
@@ -73,21 +59,17 @@ COOLDOWN_MINS   = 5
 EMA_PERIOD      = 9
 POLL_INTERVAL   = 30
 
-# ── TWO TRADING SESSIONS ──
-# Each session builds its OWN opening range in its first 30 minutes,
-# then trades the rest of the window. Times are ET as (hour, minute).
-#
-# Session AM = morning (VALIDATED — the 69% backtested window)
-# Session PM = evening (EXPERIMENTAL — NOT backtested, unknown edge)
+# TWO TRADING SESSIONS
+# 
 SESSIONS = [
-    {   # Morning — validated
+    {   # Morning
         "name":    "AM",
         "start":   (9, 30),
         "or_end":  (10, 0),
         "end":     (12, 0),
         "flatten": (12, 5),
     },
-    {   # Evening — EXPERIMENTAL, unvalidated
+    {   # Evening 
         "name":    "PM",
         "start":   (19, 0),    # 7:00 PM ET
         "or_end":  (19, 30),   # OR locks 7:30 PM
